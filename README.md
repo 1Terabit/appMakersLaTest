@@ -1,24 +1,169 @@
 # Driver Location System
 
-Real-time transport system with microservices architecture, implementing WebSockets to transmit driver locations to clients.
+Real-time transport system with microservices architecture, implementing WebSockets to transmit driver locations to clients. Similar to the driver location functionality in ride-sharing applications like Uber.
 
 ## Overview
 
-This project implements a real-time driver location system similar to Uber, where clients can subscribe to driver location updates through WebSockets. The system is built using a microservices architecture with NestJS, following the Hexagonal Architecture (Ports & Adapters) pattern and SOLID principles.
+This project implements a real-time driver location system where clients can subscribe to driver location updates through WebSockets. The system is built using a microservices architecture with NestJS, following the Hexagonal Architecture (Ports & Adapters) pattern and SOLID principles.
+
+## Architecture
+
+### Microservices Architecture
+The system is composed of four microservices that communicate with each other:
+
+1. **Gateway Service (BFF)** - API Gateway and Backend for Frontend
+2. **Auth Service** - Authentication and user management
+3. **Location Service** - Driver location updates and storage
+4. **Realtime Service** - WebSocket communication for real-time updates
+
+### Hexagonal Architecture (Ports & Adapters)
+Each microservice follows the hexagonal architecture pattern:
+
+- **Domain Layer**: Core business entities and logic
+- **Application Layer**: Use cases and business rules
+- **Ports Layer**: Interface definitions (input and output ports)
+- **Adapters Layer**: Concrete implementations of interfaces
+
+### Communication Patterns
+- **HTTP/REST**: Between gateway and other services
+- **WebSockets**: For real-time client updates
+- **Redis Pub/Sub**: For inter-service messaging and scaling
+
+## Technologies
+
+- **Framework**: NestJS (TypeScript-based Node.js framework)
+- **WebSockets**: Socket.IO for real-time communication
+- **Messaging**: Redis for pub/sub messaging between service instances
+- **Documentation**: Swagger/OpenAPI for API documentation
+- **Validation**: class-validator for DTO validation
+- **Authentication**: JWT (JSON Web Tokens)
+- **Package Management**: PNPM for efficient dependency management
+- **Containerization**: Docker and Docker Compose (optional)
 
 ## Microservices
 
-### auth-service (Port 3001)
-- Authentication and JWT token generation
-- Driver profile management
-- Token validation endpoints
-- Features 5-minute token expiration for security
+### Gateway Service (Port 3000)
+- **Role**: API Gateway and Backend for Frontend (BFF)
+- **Features**:
+  - Routes requests to appropriate microservices
+  - Provides unified API for frontend applications
+  - Optimized endpoints that combine data from multiple services
+  - API documentation with Swagger
+- **Key Endpoints**:
+  - Authentication proxy endpoints
+  - Location management endpoints
+  - BFF optimized dashboard endpoints
+- **Technologies**: NestJS, Axios for HTTP requests
 
-### location-service (Port 3002)
-- Receives and stores driver location updates
-- Validates tokens with auth-service
-- Publishes location updates to Redis
-- Provides REST API for location updates
+### Auth Service (Port 3001)
+- **Role**: Authentication and driver management
+- **Features**:
+  - JWT-based authentication
+  - Driver profile management
+  - Token validation endpoints
+  - Secure password handling
+- **Key Endpoints**:
+  - Login and authentication
+  - Token validation
+  - Profile management
+- **Technologies**: NestJS, JWT, cryptographic functions
+
+### Location Service (Port 3002)
+- **Role**: Driver location management
+- **Features**:
+  - Location updates and storage
+  - Online status tracking
+  - Location retrieval
+  - Redis-based location messaging
+- **Key Endpoints**:
+  - Update location
+  - Retrieve location
+  - Check online status
+- **Technologies**: NestJS, Redis for messaging
+
+### Realtime Service (Port 3003)
+- **Role**: Real-time updates via WebSockets
+- **Features**:
+  - WebSocket connection management
+  - Client subscriptions to driver updates
+  - Driver location broadcasting
+  - Redis for scaling across instances
+- **Key Components**:
+  - Client WebSocket Gateway
+  - Driver WebSocket Gateway
+  - Redis messaging integration
+- **Technologies**: NestJS, Socket.IO, Redis
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js (v16+)
+- Redis server (for messaging between services)
+- PNPM package manager (recommended)
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd driver-location-system
+   ```
+
+2. Install dependencies in each microservice
+   ```bash
+   cd auth-service && pnpm install
+   cd ../location-service && pnpm install
+   cd ../realtime-service && pnpm install
+   cd ../gateway-service && pnpm install
+   ```
+
+3. Configure environment variables
+   - Copy `.env.example` to `.env` in each microservice directory
+   - Update the values as needed
+
+4. Start Redis server
+   ```bash
+   redis-server
+   ```
+
+5. Start all services (in separate terminals)
+   ```bash
+   # Terminal 1
+   cd auth-service && pnpm start:dev
+   
+   # Terminal 2
+   cd location-service && pnpm start:dev
+   
+   # Terminal 3
+   cd realtime-service && pnpm start:dev
+   
+   # Terminal 4
+   cd gateway-service && pnpm start:dev
+   ```
+
+6. Access the API documentation
+   - Open http://localhost:3000/api/docs in your browser
+
+## Project Structure
+
+Each microservice follows a similar structure based on hexagonal architecture:
+
+```
+├── src/
+│   ├── domain/            # Core domain entities
+│   ├── application/       # Application services and use cases
+│   ├── ports/             # Interface definitions
+│   │   ├── in/            # Input ports (service interfaces)
+│   │   └── out/           # Output ports (repository, messaging interfaces)
+│   ├── infrastructure/    # External adapters implementation
+│   │   ├── controllers/   # REST controllers
+│   │   ├── repositories/  # Data storage implementations
+│   │   ├── messaging/     # Messaging implementations
+│   │   └── config/        # Configuration
+│   └── main.ts            # Application entry point
+├── .env.example           # Example environment variables
+└── README.md              # Service documentation
+```
 
 ### realtime-service (Port 3003)
 - Manages WebSocket connections for clients and drivers
@@ -56,10 +201,28 @@ Multiple instances can communicate through Redis Pub/Sub, making the system hori
 
 ```bash
 # Install dependencies
-pnpm install
+
+pnpm i
+
+# Build services
+
+pnpm build
+
+# Build images
+
+podman compose build
+
+or
+
+docker compose build
 
 # Start all services
-docker-compose up
+
+podman compose up --build
+
+or
+
+docker compose up --build
 ```
 
 ## API Documentation

@@ -3,8 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { AuthController } from './controllers/auth.controller';
 import { DriverController } from './controllers/driver.controller';
+import { DashboardController } from './controllers/dashboard.controller';
 import { AuthService } from './services/auth.service';
 import { LocationService } from './services/location.service';
+import { DashboardService } from './services/dashboard.service';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { LocationService } from './services/location.service';
       }),
     }),
   ],
-  controllers: [AuthController, DriverController],
-  providers: [AuthService, LocationService],
+  controllers: [AuthController, DriverController, DashboardController],
+  providers: [AuthService, LocationService, DashboardService],
 })
 export class AppModule {}
