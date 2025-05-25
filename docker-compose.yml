@@ -50,7 +50,7 @@ services:
       - location-service
 
   gateway-service:
-    build: ./gateway-service
+    build: ./gateway-service-bff
     ports:
       - "3000:3000"
     environment:
@@ -59,7 +59,7 @@ services:
       - LOCATION_SERVICE_URL=http://location-service:3000
       - REALTIME_SERVICE_URL=http://realtime-service:3000
     volumes:
-      - ./gateway-service:/app
+      - ./gateway-service-bff:/app
       - /app/node_modules
     depends_on:
       - auth-service
