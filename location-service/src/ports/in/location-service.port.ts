@@ -1,14 +1,16 @@
 import { DriverLocation } from '../../domain/driver-location.entity';
 
 /**
- * Puerto de entrada para el servicio de ubicación
+ * Input port for the location service
+ * Defines the contract for location operations within the hexagonal architecture
  */
 export interface ILocationService {
   /**
-   * Actualiza la ubicación de un conductor
-   * @param driverId ID del conductor
-   * @param latitude Latitud
-   * @param longitude Longitud
+   * Updates a driver's location with new coordinates
+   * @param driverId Unique identifier of the driver
+   * @param latitude Current latitude coordinate of the driver
+   * @param longitude Current longitude coordinate of the driver
+   * @returns Promise that resolves when the update is complete
    */
   updateDriverLocation(
     driverId: string,
@@ -17,14 +19,17 @@ export interface ILocationService {
   ): Promise<void>;
 
   /**
-   * Obtiene la última ubicación conocida de un conductor
-   * @param driverId ID del conductor
+   * Retrieves the last known location for a driver
+   * @param driverId Unique identifier of the driver
+   * @returns Promise that resolves to the driver's last location or null if not found
    */
   getLastKnownLocation(driverId: string): Promise<DriverLocation | null>;
 
   /**
-   * Verifica si el conductor está en línea
-   * @param driverId ID del conductor
+   * Checks if a driver is currently online based on their last location update
+   * A driver is considered online if they have a recent location update
+   * @param driverId Unique identifier of the driver
+   * @returns Promise that resolves to a boolean indicating if the driver is online
    */
   isDriverOnline(driverId: string): Promise<boolean>;
 }

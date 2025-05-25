@@ -1,18 +1,27 @@
 import { IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
 
 /**
- * DTO para la actualización de ubicación de un conductor
+ * Data Transfer Object for driver location updates
+ * Contains the geographic coordinates with validation constraints
  */
 export class UpdateLocationDto {
-  @IsNumber({}, { message: 'La latitud debe ser un número' })
-  @IsNotEmpty({ message: 'La latitud es requerida' })
-  @Min(-90, { message: 'La latitud debe estar entre -90 y 90' })
-  @Max(90, { message: 'La latitud debe estar entre -90 y 90' })
+  /**
+   * Latitude coordinate of the driver's position
+   * Must be a number between -90 and 90 degrees
+   */
+  @IsNumber({}, { message: 'Latitude must be a number' })
+  @IsNotEmpty({ message: 'Latitude is required' })
+  @Min(-90, { message: 'Latitude must be between -90 and 90 degrees' })
+  @Max(90, { message: 'Latitude must be between -90 and 90 degrees' })
   latitude: number;
 
-  @IsNumber({}, { message: 'La longitud debe ser un número' })
-  @IsNotEmpty({ message: 'La longitud es requerida' })
-  @Min(-180, { message: 'La longitud debe estar entre -180 y 180' })
-  @Max(180, { message: 'La longitud debe estar entre -180 y 180' })
+  /**
+   * Longitude coordinate of the driver's position
+   * Must be a number between -180 and 180 degrees
+   */
+  @IsNumber({}, { message: 'Longitude must be a number' })
+  @IsNotEmpty({ message: 'Longitude is required' })
+  @Min(-180, { message: 'Longitude must be between -180 and 180 degrees' })
+  @Max(180, { message: 'Longitude must be between -180 and 180 degrees' })
   longitude: number;
 }
