@@ -23,6 +23,29 @@ The system is composed of four microservices that communicate with each other:
 - **WebSockets**: For real-time client updates
 - **Redis Pub/Sub**: For inter-service messaging and scaling
 
+### Testing Strategy
+
+The project implements a comprehensive testing approach with both unit tests and end-to-end (e2e) tests:
+
+#### Unit Tests
+- **Test Coverage**: Core business logic and service methods
+- **Mock Approach**: External dependencies (Redis, HTTP clients) are mocked
+- **Frameworks**: Jest, ts-jest
+- **Command**: `pnpm test` in each service directory
+
+#### End-to-End Tests
+- **Test Coverage**: API endpoints, WebSocket communication, service integrations
+- **Mock Approach**: External services are mocked to avoid dependencies
+- **Service Dependencies**: Isolated with dependency injection for testability
+- **Test Data**: Mock data in each test file for predictable test results
+- **WebSocket Testing**: Socket.io-client for realtime service tests
+- **Command**: `pnpm test:e2e` in each service directory
+
+#### Key Testing Patterns
+- **Port/Adapter Pattern**: External dependencies are accessed through interfaces that can be easily mocked
+- **Dependency Injection**: All dependencies are injected, making them easy to replace in tests
+- **Test Environment**: Separate test environment with its own configuration
+
 **For detailed architecture diagrams and documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
 
 ## Technologies
@@ -34,7 +57,7 @@ The system is composed of four microservices that communicate with each other:
 - **Validation**: class-validator for DTO validation
 - **Authentication**: JWT (JSON Web Tokens)
 - **Package Management**: PNPM for efficient dependency management
-- **Containerization**: Docker and Docker Compose (optional)
+- **Containerization**: Docker or Podman and Docker Compose (optional)
 
 ## Microservices
 
@@ -96,13 +119,16 @@ The system is composed of four microservices that communicate with each other:
 - Node.js (v16+)
 - Redis server (for messaging between services)
 - PNPM package manager (recommended)
+- Docker or Podman
+
+## Getting Started
 
 ### Installation
 
 1. Clone the repository
    ```bash
    git clone <repository-url>
-   cd driver-location-system
+   cd appMakersLaTest
    ```
 
 2. Install dependencies in each microservice
@@ -117,12 +143,49 @@ The system is composed of four microservices that communicate with each other:
    - Copy `.env.example` to `.env` in each microservice directory
    - Update the values as needed
 
-4. Start Redis server
+## Running the System
+
+You can run the system either locally or using containers. Choose the approach that works best for your environment.
+
+### Option 1: Running with Docker/Podman (Recommended)
+
+This is the recommended approach as it provides a consistent environment and handles all dependencies:
+
+1. Make sure Docker/Podman and Docker Compose are installed on your system
+
+2. Build and start all services using Docker Compose
+   ```bash
+   # Using Docker
+   docker-compose up -d
+   
+   # Using Podman
+   podman-compose up -d
+   ```
+
+3. View logs for all services
+   ```bash
+   docker-compose logs -f
+   # or with Podman
+   podman-compose logs -f
+   ```
+
+4. Stop all services
+   ```bash
+   docker-compose down
+   # or with Podman
+   podman-compose down
+   ```
+
+### Option 2: Running Locally
+
+If you prefer to run services directly on your host machine:
+
+1. Start Redis server
    ```bash
    redis-server
    ```
 
-5. Start all services (in separate terminals)
+2. Start all services (in separate terminals)
    ```bash
    # Terminal 1
    cd auth-service && pnpm start:dev
@@ -142,7 +205,7 @@ The system is composed of four microservices that communicate with each other:
 
 ## Project Structure
 
-Each microservice follows a similar structure based on hexagonal architecture:
+Each microservice follows a similar structure based on hexagonal architecture with comprehensive testing:
 
 ```
 ├── src/
@@ -157,6 +220,14 @@ Each microservice follows a similar structure based on hexagonal architecture:
 │   │   ├── messaging/     # Messaging implementations
 │   │   └── config/        # Configuration
 │   └── main.ts            # Application entry point
+├── test/                  # Testing directory
+│   ├── unit/              # Unit tests
+│   │   ├── domain/        # Domain entity tests
+│   │   ├── application/   # Service and use case tests
+│   │   └── infrastructure/ # Adapter tests
+│   ├── e2e/               # End-to-end tests
+│   └── jest-e2e.json      # E2E Jest configuration
+├── jest.config.js         # Jest configuration for unit tests
 ├── .env.example           # Example environment variables
 └── README.md              # Service documentation
 ```
@@ -192,34 +263,6 @@ The system uses a Hexagonal Architecture (Ports & Adapters) pattern:
 - **Infrastructure**: External adapters and implementations
 
 Multiple instances can communicate through Redis Pub/Sub, making the system horizontally scalable.
-
-## Getting Started
-
-```bash
-# Install dependencies
-
-pnpm i
-
-# Build services
-
-pnpm build
-
-# Build images
-
-podman compose build
-
-or
-
-docker compose build
-
-# Start all services
-
-podman compose up --build
-
-or
-
-docker compose up --build
-```
 
 ## API Documentation
 
