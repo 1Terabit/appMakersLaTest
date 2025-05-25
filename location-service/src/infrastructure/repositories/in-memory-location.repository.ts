@@ -3,15 +3,32 @@ import { DriverLocation } from '../../domain/driver-location.entity';
 import { ILocationRepository } from '../../ports/out/location-repository.port';
 
 /**
- * Implementación en memoria del repositorio de ubicaciones
- * En un entorno real, esto se conectaría a una base de datos
+ * In-memory implementation of the location repository
+ * In a real environment, this would connect to a database
+ * Used for development and testing purposes
  */
 @Injectable()
 export class InMemoryLocationRepository implements ILocationRepository {
+  /**
+   * Logger instance for this repository
+   * @private
+   */
   private readonly logger = new Logger(InMemoryLocationRepository.name);
-  // Simulamos una base de datos en memoria con las ubicaciones de los conductores
+  
+  /**
+   * Simulates an in-memory database with driver locations
+   * Map of driver IDs to arrays of locations ordered by timestamp
+   * @private
+   */
   private locationsByDriver: Map<string, DriverLocation[]> = new Map();
 
+  /**
+   * Saves a driver location to the in-memory repository
+   * Creates a new array for a driver if it doesn't exist yet
+   * Maintains a maximum of 100 locations per driver
+   * @param location Driver location entity to save
+   * @returns Promise that resolves when the save operation completes
+   */
   async saveLocation(location: DriverLocation): Promise<void> {
     const driverId = location.driverId;
     
@@ -22,7 +39,7 @@ export class InMemoryLocationRepository implements ILocationRepository {
     const driverLocations = this.locationsByDriver.get(driverId);
     driverLocations.push(location);
     
-    // Mantener solo las últimas 100 ubicaciones para cada conductor
+    // Keep only the last 100 locations for each driver
     if (driverLocations.length > 100) {
       driverLocations.shift();
     }
@@ -30,6 +47,11 @@ export class InMemoryLocationRepository implements ILocationRepository {
     this.logger.debug(`Saved location for driver ${driverId}: ${JSON.stringify(location)}`);
   }
 
+  /**
+   * Retrieves the last known location for a driver
+   * @param driverId Unique identifier of the driver
+   * @returns Promise that resolves to the driver's last location or null if not found
+   */
   async getLastLocation(driverId: string): Promise<DriverLocation | null> {
     const driverLocations = this.locationsByDriver.get(driverId) || [];
     
@@ -40,6 +62,13 @@ export class InMemoryLocationRepository implements ILocationRepository {
     return driverLocations[driverLocations.length - 1];
   }
 
+  /**
+   * Retrieves location history for a driver within a specified time range
+   * @param driverId Unique identifier of the driver
+   * @param startTime Start of the time range to retrieve locations from
+   * @param endTime End of the time range to retrieve locations from
+   * @returns Promise that resolves to an array of driver locations within the time range
+   */
   async getLocationHistory(
     driverId: string,
     startTime: Date,

@@ -1,17 +1,36 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Headers, UnauthorizedException, Logger } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Inject, Param, Post, Headers, UnauthorizedException, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ILocationService } from '../../ports/in/location-service.port';
 import { UpdateLocationDto } from './dtos/update-location.dto';
 
+/**
+ * Controller handling driver location operations
+ * Provides endpoints for updating and retrieving driver locations
+ */
 @Controller('driver')
 export class LocationController {
+  /**
+   * Logger instance for this controller
+   * @private
+   */
   private readonly logger = new Logger(LocationController.name);
+  
+  /**
+   * URL of the authentication service for token validation
+   * @private
+   */
   private readonly authServiceUrl: string;
 
+  /**
+   * Constructor for the location controller
+   * @param locationService Service for managing driver locations
+   * @param httpService HTTP client for making requests to other services
+   * @param configService Configuration service for accessing environment variables
+   */
   constructor(
-    private readonly locationService: ILocationService,
+    @Inject('ILocationService') private readonly locationService: ILocationService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
@@ -19,10 +38,13 @@ export class LocationController {
   }
 
   /**
-   * Endpoint para actualizar la ubicación de un conductor
-   * @param token Token de acceso del conductor
-   * @param updateLocationDto Datos de ubicación
-   * @returns Confirmación de actualización
+   * Endpoint to update a driver's location
+   * Requires authentication via Bearer token
+   * @param token Driver's access token from Authorization header
+   * @param updateLocationDto Location data containing latitude and longitude
+   * @returns Confirmation of successful update
+   * @throws UnauthorizedException if token is invalid or missing
+   * @throws HttpException if location update fails
    */
   @Post('update')
   async updateLocation(
@@ -31,7 +53,7 @@ export class LocationController {
   ) {
     try {
       if (!token) {
-        throw new UnauthorizedException('Token de acceso requerido');
+        throw new UnauthorizedException('Access token required');
       }
 
       // Validar el token con el servicio de autenticación
@@ -44,7 +66,7 @@ export class LocationController {
         updateLocationDto.longitude,
       );
 
-      return { success: true, message: 'Ubicación actualizada correctamente' };
+      return { success: true, message: 'Location updated successfully' };
     } catch (error) {
       this.logger.error(`Error updating location: ${error.message}`, error.stack);
       
@@ -53,16 +75,18 @@ export class LocationController {
       }
       
       throw new HttpException(
-        'Error al actualizar la ubicación',
+        'Error updating location',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   /**
-   * Endpoint para obtener la última ubicación de un conductor
-   * @param driverId ID del conductor
-   * @returns Última ubicación conocida
+   * Endpoint to get a driver's last known location
+   * Also returns whether the driver is currently online based on the timestamp
+   * @param driverId Unique identifier of the driver
+   * @returns Object containing location data and online status
+   * @throws HttpException if location is not found or retrieval fails
    */
   @Get(':driverId/location')
   async getDriverLocation(@Param('driverId') driverId: string) {
@@ -70,7 +94,7 @@ export class LocationController {
       const location = await this.locationService.getLastKnownLocation(driverId);
       
       if (!location) {
-        throw new HttpException('Ubicación no encontrada', HttpStatus.NOT_FOUND);
+        throw new HttpException('Location not found', HttpStatus.NOT_FOUND);
       }
       
       const isOnline = location.isRecent();
@@ -90,16 +114,19 @@ export class LocationController {
       }
       
       throw new HttpException(
-        'Error al obtener la ubicación',
+        'Error retrieving location',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   /**
-   * Valida un token con el servicio de autenticación
-   * @param token Token a validar
-   * @returns ID del conductor
+   * Validates a token with the authentication service
+   * Makes an HTTP request to the auth service to verify token validity
+   * @param token JWT token to validate
+   * @returns Driver ID extracted from the validated token
+   * @throws UnauthorizedException if token is invalid or expired
+   * @private Internal method used for authentication
    */
   private async validateToken(token: string): Promise<string> {
     try {
@@ -110,7 +137,7 @@ export class LocationController {
       return response.data.driverId;
     } catch (error) {
       this.logger.error(`Error validating token: ${error.message}`, error.stack);
-      throw new UnauthorizedException('Token inválido o expirado');
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }

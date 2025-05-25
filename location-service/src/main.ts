@@ -1,14 +1,22 @@
+/**
+ * Main entry point for the Location Service
+ * Initializes the NestJS application with necessary middleware
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { LocationModule } from './location.module';
 
+/**
+ * Bootstrap function to initialize and start the NestJS application
+ * Configures global pipes, CORS, and starts the HTTP server
+ */
 async function bootstrap() {
   const app = await NestFactory.create(LocationModule);
   
-  // Habilitar CORS para permitir peticiones desde otros dominios
+  // Enable CORS to allow requests from other domains
   app.enableCors();
   
-  // Configurar validación global de DTOs
+  // Configure global DTO validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,7 +26,7 @@ async function bootstrap() {
   );
   
   await app.listen(3000);
-  console.log(`Location service is running on port 3000`);
+  console.log(`Location service is running on port 3002`);
 }
 
 bootstrap();

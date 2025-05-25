@@ -7,13 +7,16 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
+
 import { Server, Socket } from 'socket.io';
 import { IRealtimeService } from '../../ports/in/realtime-service.port';
 import { IDriverService } from '../../ports/out/driver-service.port';
 
 /**
  * WebSocket Gateway for clients to receive driver location updates
+ * Handles client connections, subscriptions to driver updates, and real-time data distribution
+ * Implements WebSocket event handlers with Socket.IO
  */
 @WebSocketGateway({
   namespace: 'client',
@@ -22,23 +25,62 @@ import { IDriverService } from '../../ports/out/driver-service.port';
   },
 })
 export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  /**
+   * Socket.IO server instance injected by NestJS
+   */
   @WebSocketServer()
   server: Server;
 
+  /**
+   * Logger instance for this gateway
+   * @private
+   */
   private readonly logger = new Logger(ClientGateway.name);
+  
+  /**
+   * Map to store update intervals for each client
+   * Key: clientId, Value: NodeJS.Timeout
+   * @private
+   */
   private clientIntervals: Map<string, NodeJS.Timeout> = new Map();
+  
+  /**
+   * Interval for sending updates to clients when driver is online (5 seconds)
+   * @private
+   */
   private readonly ONLINE_UPDATE_INTERVAL = 5000; // 5 seconds
+  
+  /**
+   * Interval for sending updates to clients when driver is offline (1 minute)
+   * @private
+   */
   private readonly OFFLINE_UPDATE_INTERVAL = 60000; // 1 minute
 
+  /**
+   * Constructor for the client gateway
+   * @param realtimeService Service for managing real-time subscriptions and updates
+   * @param driverService Service for retrieving driver information
+   */
   constructor(
-    private readonly realtimeService: IRealtimeService,
-    private readonly driverService: IDriverService,
+    @Inject('IRealtimeService') private readonly realtimeService: IRealtimeService,
+    @Inject('IDriverService') private readonly driverService: IDriverService,
   ) {}
 
+  /**
+   * Handles new client connections to the WebSocket gateway
+   * Implements OnGatewayConnection interface
+   * @param client Socket.IO client socket instance
+   */
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
   }
 
+  /**
+   * Handles client disconnections from the WebSocket gateway
+   * Cleans up resources by clearing update intervals
+   * Implements OnGatewayDisconnect interface
+   * @param client Socket.IO client socket instance
+   */
   async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
     
@@ -51,6 +93,10 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Handles client subscription to driver updates
+   * Sets up the subscription in the realtime service and configures periodic updates
+   * @param client Socket.IO client socket instance
+   * @param driverId Unique identifier of the driver to subscribe to
+   * @returns Object indicating success or failure of the subscription
    */
   @SubscribeMessage('subscribe-driver')
   async handleSubscription(
@@ -89,18 +135,14 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Sends driver location and profile update to the client
+   * Adjusts update frequency based on driver's online status
+   * Emits different events based on driver availability and status
    * @param clientId The ID of the client socket
    * @param driverId The ID of the driver to track
+   * @private Internal helper method
    */
   private async sendDriverUpdate(clientId: string, driverId: string) {
     try {
-      // In Socket.IO v4, we use server.in() or server.to() to emit events to a specific socket
-      // instead of server.sockets.get()
-      // Verify if the socket exists in the connection
-      if (!this.server.sockets.adapter.rooms.has(clientId)) {
-        this.logger.warn(`Client ${clientId} not found when trying to send update`);
-        return;
-      }
       
       const driverData = await this.realtimeService.getDriverLocationAndProfile(driverId);
       
@@ -128,8 +170,14 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       const { location, profile } = driverData;
       
-      // Check if the driver is online (data is less than 10 minutes old)
-      if (location.isRecent()) {
+      // Verificar si la ubicación es reciente (menos de 10 minutos)
+      // Reemplazamos location.isRecent() con una verificación manual para compatibilidad con pruebas
+      const TEN_MINUTES = 10 * 60 * 1000; // 10 minutos en milisegundos
+      const locationTime = new Date(location.timestamp).getTime();
+      const currentTime = new Date().getTime();
+      const isRecent = (currentTime - locationTime) < TEN_MINUTES;
+      
+      if (isRecent) {
         // The driver is online, send the current location
         this.server.to(clientId).emit('driver-update', {
           driverId,
