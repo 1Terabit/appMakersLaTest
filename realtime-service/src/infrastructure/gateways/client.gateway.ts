@@ -7,7 +7,8 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject } from '@nestjs/common';
+
 import { Server, Socket } from 'socket.io';
 import { IRealtimeService } from '../../ports/in/realtime-service.port';
 import { IDriverService } from '../../ports/out/driver-service.port';
@@ -31,8 +32,8 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly OFFLINE_UPDATE_INTERVAL = 60000; // 1 minute
 
   constructor(
-    private readonly realtimeService: IRealtimeService,
-    private readonly driverService: IDriverService,
+    @Inject('IRealtimeService') private readonly realtimeService: IRealtimeService,
+    @Inject('IDriverService') private readonly driverService: IDriverService,
   ) {}
 
   async handleConnection(client: Socket) {
