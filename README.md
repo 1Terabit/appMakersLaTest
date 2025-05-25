@@ -201,10 +201,28 @@ Multiple instances can communicate through Redis Pub/Sub, making the system hori
 
 ```bash
 # Install dependencies
-pnpm install
+
+pnpm i
+
+# Build services
+
+pnpm build
+
+# Build images
+
+podman compose build
+
+or
+
+docker compose build
 
 # Start all services
-docker-compose up
+
+podman compose up --build
+
+or
+
+docker compose up --build
 ```
 
 ## API Documentation
