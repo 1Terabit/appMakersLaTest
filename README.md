@@ -200,8 +200,34 @@ If you prefer to run services directly on your host machine:
    cd gateway-service && pnpm start:dev
    ```
 
-6. Access the API documentation
-   - Open http://localhost:3000/api/docs in your browser
+### Using PNPM Workspace Commands
+
+This project is set up as a PNPM workspace, which allows you to run commands across all services at once:
+
+```bash
+# Install dependencies for all services
+pnpm i
+
+# Run tests across all services
+pnpm -r test
+
+# Run e2e tests across all services
+pnpm -r test:e2e
+
+# Build all services
+pnpm -r build
+
+# Run specific script in all services
+pnpm -r <script-name>
+```
+
+These commands are especially useful for development and CI/CD pipelines.
+
+## Accessing the API
+
+Once the system is running (either with Docker/Podman or locally), you can access:
+
+- API documentation: http://localhost:3000/api/docs
 
 ## Project Structure
 
