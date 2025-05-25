@@ -139,7 +139,15 @@ The project implements a comprehensive testing approach with both unit tests and
    cd ../gateway-service && pnpm install
    ```
 
-3. Configure environment variables
+3. Ejecute each microservice
+   ```bash
+   cd auth-service && pnpm run start:dev
+   cd ../location-service && pnpm run start:dev
+   cd ../realtime-service && pnpm run start:dev
+   cd ../gateway-service && pnpm run start:dev
+   ```
+
+4. Configure environment variables
    - Copy `.env.example` to `.env` in each microservice directory
    - Update the values as needed
 
@@ -151,29 +159,37 @@ You can run the system either locally or using containers. Choose the approach t
 
 This is the recommended approach as it provides a consistent environment and handles all dependencies:
 
-1. Make sure Docker/Podman and Docker Compose are installed on your system
+1. Make sure Podman/Docker and Docker Compose are installed on your system
 
-2. Build and start all services using Docker Compose
+2. Build and start all services using Podman or Docker Compose
+
    ```bash
-   # Using Docker
-   docker-compose up -d
-   
    # Using Podman
+
    podman compose up --build
+
+   # Using Docker
+
+   docker-compose up -d
    ```
 
 3. View logs for all services
    ```bash
-   docker-compose logs -f
-   # or with Podman
+
    podman compose logs -f
+
+   # or with Docker
+
+   docker-compose logs -f
    ```
 
 4. Stop all services
    ```bash
-   docker-compose down
-   # or with Podman
    podman compose down
+
+   # or with Docker
+
+   docker-compose down
    ```
 
 ### Option 2: Running Locally
@@ -185,7 +201,12 @@ If you prefer to run services directly on your host machine:
    redis-server
    ```
 
-2. Start all services (in separate terminals)
+2. Install dependencies for all services
+   ```bash
+   pnpm i
+   ```
+
+3. Start all services (in separate terminals)
    ```bash
    # Terminal 1
    cd auth-service && pnpm start:dev
