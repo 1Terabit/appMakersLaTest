@@ -1,6 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { IAuthService, LoginResponseDto, TokenValidationResult } from '../ports/in/auth-service.port';
 import { IDriverRepository } from '../ports/out/driver-repository.port';
 import { Driver } from '../domain/driver.entity';
@@ -19,7 +19,8 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, driver.password);
+    const hashedPassword = this.hashPassword(password);
+    const isPasswordValid = hashedPassword === driver.password;
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -73,5 +74,13 @@ export class AuthService implements IAuthService {
     };
     
     return this.jwtService.sign(payload, { expiresIn: '300s' });
+  }
+
+  /**
+   * Método simple para hashear contraseñas usando crypto en lugar de bcrypt
+   * Esto es temporal, en producción se debería usar bcrypt
+   */
+  private hashPassword(password: string): string {
+    return createHash('sha256').update(password).digest('hex');
   }
 }

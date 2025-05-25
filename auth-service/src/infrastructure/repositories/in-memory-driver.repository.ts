@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { Driver } from '../../domain/driver.entity';
 import { IDriverRepository } from '../../ports/out/driver-repository.port';
 
@@ -24,7 +24,8 @@ export class InMemoryDriverRepository implements IDriverRepository {
       return null;
     }
     
-    const isPasswordValid = await bcrypt.compare(password, driver.password);
+    const hashedPassword = this.hashPassword(password);
+    const isPasswordValid = hashedPassword === driver.password;
     
     return isPasswordValid ? driver : null;
   }
@@ -42,15 +43,14 @@ export class InMemoryDriverRepository implements IDriverRepository {
    * En un entorno real, esta función no existiría
    */
   private async initializeDrivers() {
-    // Creamos 3 conductores de prueba con contraseñas hasheadas
-    const salt = await bcrypt.genSalt();
+    // Creamos 3 conductores de prueba con contraseñas hasheadas con crypto
     
     this.drivers = [
       {
         id: '1',
         name: 'Juan Pérez',
         email: 'juan@example.com',
-        password: await bcrypt.hash('password1', salt),
+        password: this.hashPassword('password1'),
         profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -59,7 +59,7 @@ export class InMemoryDriverRepository implements IDriverRepository {
         id: '2',
         name: 'María López',
         email: 'maria@example.com',
-        password: await bcrypt.hash('password2', salt),
+        password: this.hashPassword('password2'),
         profileImage: 'https://randomuser.me/api/portraits/women/2.jpg',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -68,11 +68,19 @@ export class InMemoryDriverRepository implements IDriverRepository {
         id: '3',
         name: 'Carlos Rodríguez',
         email: 'carlos@example.com',
-        password: await bcrypt.hash('password3', salt),
+        password: this.hashPassword('password3'),
         profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
     ];
+  }
+
+  /**
+   * Método simple para hashear contraseñas usando crypto en lugar de bcrypt
+   * Esto es temporal, en producción se debería usar bcrypt
+   */
+  private hashPassword(password: string): string {
+    return createHash('sha256').update(password).digest('hex');
   }
 }
