@@ -2,4 +2,4 @@ packages:
   - "auth-service"
   - "location-service"
   - "realtime-service"
-  - "gateway-service"
+  - "gateway-service-bff"
