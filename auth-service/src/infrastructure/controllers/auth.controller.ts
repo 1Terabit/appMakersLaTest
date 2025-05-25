@@ -1,10 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post, UnauthorizedException } from '@nestjs/common';
 import { IAuthService } from '../../ports/in/auth-service.port';
 import { LoginDto } from './dtos/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: IAuthService) {}
+  constructor(@Inject('IAuthService') private readonly authService: IAuthService) {}
 
   /**
    * Endpoint to authenticate a driver
