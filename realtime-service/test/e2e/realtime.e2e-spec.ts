@@ -11,7 +11,7 @@ import { DriverLocation } from '../../src/domain/driver-location.entity';
 import { ClientGateway } from '../../src/infrastructure/gateways/client.gateway';
 import { DriverGateway } from '../../src/infrastructure/gateways/driver.gateway';
 
-// Mock para el servicio de mensajería (Redis)
+// Mock this service for testing purposes (Redis)
 class MockRealtimeMessaging implements IRealtimeMessaging {
   private locationUpdateHandler: ((driverId: string, location: DriverLocation) => void) | null = null;
 
@@ -24,7 +24,7 @@ class MockRealtimeMessaging implements IRealtimeMessaging {
   }
 
   async publishDriverLocationUpdate(driverId: string, location: DriverLocation): Promise<void> {
-    // Simular la publicación llamando al handler si está registrado
+    // Simulate the publication by calling the handler if it is registered
     if (this.locationUpdateHandler) {
       this.locationUpdateHandler(driverId, location);
     }
@@ -36,7 +36,7 @@ class MockRealtimeMessaging implements IRealtimeMessaging {
   }
 }
 
-// Mock para el servicio de drivers
+// Mock this service for testing purposes (Driver)
 class MockDriverService implements IDriverService {
   private readonly drivers = new Map<string, DriverProfile>([
     ['1', {
@@ -87,7 +87,7 @@ class MockDriverService implements IDriverService {
   }
 
   async validateDriverToken(token: string): Promise<{ isValid: boolean; driverId?: string }> {
-    // Para las pruebas, aceptamos cualquier token y extraemos el ID del conductor
+    // For testing purposes, accept any token and extract the driver ID
     if (token.includes('driver')) {
       const driverId = token.split('-').pop();
       return { isValid: true, driverId };
@@ -96,7 +96,7 @@ class MockDriverService implements IDriverService {
   }
 }
 
-// Módulo de prueba personalizado
+// Custom module for testing purposes
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -159,19 +159,19 @@ describe('RealtimeGateways (e2e)', () => {
   });
 
   beforeEach(async () => {
-    // Configurar socket de cliente
+    // Configure client socket
     clientSocket = io.connect(`http://localhost:${serverPort}/client`, {
       transports: ['websocket'],
       forceNew: true,
     });
     
-    // Configurar socket de conductor
+    // Configure driver socket
     driverSocket = io.connect(`http://localhost:${serverPort}/driver`, {
       transports: ['websocket'],
       forceNew: true,
     });
     
-    // Esperar a que los sockets se conecten
+    // Wait for the sockets to connect
     await new Promise<void>((resolve) => {
       let connectedCount = 0;
       
@@ -202,13 +202,13 @@ describe('RealtimeGateways (e2e)', () => {
   });
 
   it('should allow a client to subscribe to a driver', (done) => {
-    // El cliente se suscribe a un conductor
+    // Client subscribes to a driver
     clientSocket.emit('subscribe-driver', testDriverId);
     
-    // Incrementar el timeout para evitar problemas con respuestas lentas
+    // Increase timeout to avoid slow response issues
     jest.setTimeout(10000);
     
-    // Esperar la respuesta de confirmación con la actualización del driver
+    // Wait for the confirmation with the driver update
     clientSocket.on('driver-update', (data: any) => {
       expect(data.driverId).toBe(testDriverId);
       expect(data.location).toBeDefined();
@@ -219,15 +219,15 @@ describe('RealtimeGateways (e2e)', () => {
   });
 
   it('should deliver location updates to subscribed clients', (done) => {
-    // Incrementar el timeout para evitar problemas con respuestas lentas
+    // Increase timeout to avoid slow response issues
     jest.setTimeout(10000);
     
-    // El cliente se suscribe a un conductor
+    // Client subscribes to a driver
     clientSocket.emit('subscribe-driver', testDriverId);
     
-    // Esperar la confirmación de suscripción
+    // Wait for the subscription confirmation
     clientSocket.once('driver-update', () => {
-      // Enviar actualización de ubicación del conductor
+      // Send driver location update
       const locationUpdate = {
         driverId: testDriverId,
         latitude: 40.7128,
@@ -237,8 +237,8 @@ describe('RealtimeGateways (e2e)', () => {
       
       driverSocket.emit('location-update', locationUpdate);
       
-      // El cliente recibe la actualización de ubicación
-      // Usamos 'once' en lugar de 'on' para evitar manejar múltiples eventos
+      // Client receives the location update
+      // Use 'once' instead of 'on' to avoid handling multiple events
       clientSocket.once('driver-update', (data: any) => {
         expect(data.driverId).toBe(testDriverId);
         expect(data.location).toBeDefined();
@@ -250,30 +250,30 @@ describe('RealtimeGateways (e2e)', () => {
   });
 
   it('should allow a client to unsubscribe from a driver', (done) => {
-    // Incrementar el timeout para evitar problemas con respuestas lentas
+    // Increase timeout to avoid slow response issues
     jest.setTimeout(15000);
     
-    // El cliente se suscribe a un conductor
+    // Client subscribes to a driver
     clientSocket.emit('subscribe-driver', testDriverId);
     
-    // Variable para rastrear si recibimos actualización después de cancelar
+    // Variable to track if we receive an update after unsubscribing
     let receivedUpdateAfterUnsubscribe = false;
     
-    // Esperar la confirmación de suscripción
+    // Wait for the subscription confirmation
     clientSocket.once('driver-update', () => {
-      // Cancelar la suscripción
+      // Cancel the subscription
       clientSocket.emit('unsubscribe-driver', testDriverId);
       
-      // Configurar escucha temporal para actualizaciones después de cancelar
+      // Configure temporary listener for updates after unsubscribe
       const updateListener = () => {
-        // Solo contamos actualizaciones después del unsubscribe
+        // Only count updates after unsubscribe
         receivedUpdateAfterUnsubscribe = true;
       };
       
-      // Escuchar actualizaciones que no deberían llegar
+      // Listen for updates that shouldn't arrive
       clientSocket.on('driver-update', updateListener);
       
-      // Enviar actualización de ubicación (no debería llegar al cliente)
+      // Send location update (shouldn't reach the client)
       setTimeout(() => {
         const locationUpdate = {
           driverId: testDriverId,
@@ -284,12 +284,12 @@ describe('RealtimeGateways (e2e)', () => {
         
         driverSocket.emit('location-update', locationUpdate);
         
-        // Darle tiempo al sistema para procesar la solicitud
+        // Give the system time to process the request
         setTimeout(() => {
-          // Limpieza
+          // Cleanup
           clientSocket.off('driver-update', updateListener);
           
-          // Verificamos que no se recibió ninguna actualización
+          // Verify that no updates were received
           expect(receivedUpdateAfterUnsubscribe).toBe(false);
           done();
         }, 1000);
@@ -298,13 +298,13 @@ describe('RealtimeGateways (e2e)', () => {
   });
 
   it('should provide driver location and profile via subscription', (done) => {
-    // Incrementar el timeout para evitar problemas con respuestas lentas
+    // Increase timeout to avoid slow response issues
     jest.setTimeout(10000);
     
-    // Solicitar información del conductor vía suscripción
+    // Client subscribes to a driver
     clientSocket.emit('subscribe-driver', testDriverId);
     
-    // Recibir información del conductor
+    // Receive driver information
     clientSocket.once('driver-update', (data: any) => {
       expect(data.driverId).toBe(testDriverId);
       expect(data.profile).toBeDefined();
