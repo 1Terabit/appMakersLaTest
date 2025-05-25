@@ -16,7 +16,9 @@ import { IDriverService } from '../../ports/out/driver-service.port';
 import { DriverLocation } from '../../domain/driver-location.entity';
 
 /**
- * Gateway WebSocket para que los conductores envíen actualizaciones de ubicación
+ * WebSocket Gateway for drivers to send location updates
+ * Handles driver authentication, token validation, and location update broadcasts
+ * Implements WebSocket event handlers with Socket.IO
  */
 @WebSocketGateway({
   namespace: 'driver',
@@ -25,27 +27,67 @@ import { DriverLocation } from '../../domain/driver-location.entity';
   },
 })
 export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  /**
+   * Socket.IO server instance injected by NestJS
+   */
   @WebSocketServer()
   server: Server;
 
+  /**
+   * Logger instance for this gateway
+   * @private
+   */
   private readonly logger = new Logger(DriverGateway.name);
+  
+  /**
+   * Map to store associations between socket IDs and driver information
+   * Key: socketId, Value: Object containing socket instance and driverId
+   * @private
+   */
   private driverSockets: Map<string, { socket: Socket; driverId: string }> = new Map();
+  
+  /**
+   * Map to store token validation timers for each socket
+   * Key: socketId, Value: NodeJS.Timeout
+   * @private
+   */
   private tokenValidationTimers: Map<string, NodeJS.Timeout> = new Map();
-  private readonly TOKEN_VALIDATION_INTERVAL = 60000; // 1 minuto
+  
+  /**
+   * Interval for token validation checks (1 minute)
+   * @private
+   */
+  private readonly TOKEN_VALIDATION_INTERVAL = 60000; // 1 minute
 
+  /**
+   * Constructor for the driver gateway
+   * @param realtimeService Service for handling real-time location updates
+   * @param driverService Service for driver authentication and validation
+   */
   constructor(
     @Inject('IRealtimeService') private readonly realtimeService: IRealtimeService,
     @Inject('IDriverService') private readonly driverService: IDriverService,
   ) {}
 
+  /**
+   * Handles new driver connections to the WebSocket gateway
+   * Implements OnGatewayConnection interface
+   * @param client Socket.IO client socket instance
+   */
   async handleConnection(client: Socket) {
     this.logger.log(`Driver socket connected: ${client.id}`);
   }
 
+  /**
+   * Handles driver disconnections from the WebSocket gateway
+   * Cleans up resources associated with the socket
+   * Implements OnGatewayDisconnect interface
+   * @param client Socket.IO client socket instance
+   */
   async handleDisconnect(client: Socket) {
     this.logger.log(`Driver socket disconnected: ${client.id}`);
     
-    // Limpiar recursos asociados al socket
+    // Clean up resources associated with the socket
     if (this.driverSockets.has(client.id)) {
       const { driverId } = this.driverSockets.get(client.id);
       this.logger.log(`Driver ${driverId} disconnected`);
@@ -59,7 +101,13 @@ export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Handler para la autenticación de conductores
+   * Handler for driver authentication
+   * Validates the provided JWT token and associates the socket with the driver ID
+   * Sets up periodic token validation
+   * @param client Socket.IO client socket instance
+   * @param data Object containing the JWT token
+   * @returns Object indicating success or failure of the authentication
+   * @throws WsException if token is invalid or missing
    */
   @SubscribeMessage('authenticate')
   async handleAuthentication(
@@ -68,13 +116,13 @@ export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       if (!data || !data.token) {
-        throw new WsException('Token de acceso requerido');
+        throw new WsException('Access token required');
       }
 
       const validation = await this.driverService.validateDriverToken(data.token);
       
       if (!validation.isValid || !validation.driverId) {
-        throw new WsException('Token inválido o expirado');
+        throw new WsException('Invalid or expired token');
       }
 
       // Guardar la asociación entre el socket y el conductor
@@ -88,12 +136,18 @@ export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { success: true, driverId: validation.driverId };
     } catch (error) {
       this.logger.error(`Authentication error: ${error.message}`, error.stack);
-      throw new WsException(error.message || 'Error de autenticación');
+      throw new WsException(error.message || 'Authentication error');
     }
   }
 
   /**
-   * Handler para recibir actualizaciones de ubicación de conductores
+   * Handler for receiving driver location updates
+   * Validates authentication status and location data format
+   * Creates and processes a DriverLocation entity
+   * @param client Socket.IO client socket instance
+   * @param data Object containing latitude and longitude coordinates
+   * @returns Object indicating success or failure of the update
+   * @throws WsException if not authenticated or if data is invalid
    */
   @SubscribeMessage('update-location')
   async handleLocationUpdate(
@@ -102,13 +156,13 @@ export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       if (!this.driverSockets.has(client.id)) {
-        throw new WsException('No autenticado');
+        throw new WsException('Not authenticated');
       }
 
       const { driverId } = this.driverSockets.get(client.id);
       
       if (!data || typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
-        throw new WsException('Datos de ubicación inválidos');
+        throw new WsException('Invalid location data');
       }
 
       const location = new DriverLocation({
@@ -126,30 +180,34 @@ export class DriverGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { success: true };
     } catch (error) {
       this.logger.error(`Location update error: ${error.message}`, error.stack);
-      throw new WsException(error.message || 'Error al actualizar la ubicación');
+      throw new WsException(error.message || 'Error updating location');
     }
   }
 
   /**
-   * Programa la validación periódica del token para detectar expiración
+   * Schedules periodic token validation to detect expiration
+   * Sets up an interval to validate the token and handles expired tokens
+   * @param client Socket.IO client socket instance
+   * @param token JWT token to validate periodically
+   * @private Internal helper method
    */
   private scheduleTokenValidation(client: Socket, token: string) {
-    // Limpiar timer anterior si existe
+    // Clear previous timer if it exists
     if (this.tokenValidationTimers.has(client.id)) {
       clearInterval(this.tokenValidationTimers.get(client.id));
     }
     
-    // Crear nuevo timer para validar el token periódicamente
+    // Create new timer to validate the token periodically
     const timer = setInterval(async () => {
       try {
         const validation = await this.driverService.validateDriverToken(token);
         
         if (!validation.isValid) {
-          // El token ha expirado, notificar al cliente y cerrar la conexión
-          client.emit('token-expired', { message: 'El token ha expirado, por favor vuelva a autenticarse' });
+          // Token has expired, notify the client and close the connection
+          client.emit('token-expired', { message: 'Token has expired, please authenticate again' });
           client.disconnect(true);
           
-          // Limpiar recursos
+          // Clean up resources
           if (this.driverSockets.has(client.id)) {
             this.driverSockets.delete(client.id);
           }

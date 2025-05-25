@@ -15,6 +15,8 @@ import { IDriverService } from '../../ports/out/driver-service.port';
 
 /**
  * WebSocket Gateway for clients to receive driver location updates
+ * Handles client connections, subscriptions to driver updates, and real-time data distribution
+ * Implements WebSocket event handlers with Socket.IO
  */
 @WebSocketGateway({
   namespace: 'client',
@@ -23,23 +25,62 @@ import { IDriverService } from '../../ports/out/driver-service.port';
   },
 })
 export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  /**
+   * Socket.IO server instance injected by NestJS
+   */
   @WebSocketServer()
   server: Server;
 
+  /**
+   * Logger instance for this gateway
+   * @private
+   */
   private readonly logger = new Logger(ClientGateway.name);
+  
+  /**
+   * Map to store update intervals for each client
+   * Key: clientId, Value: NodeJS.Timeout
+   * @private
+   */
   private clientIntervals: Map<string, NodeJS.Timeout> = new Map();
+  
+  /**
+   * Interval for sending updates to clients when driver is online (5 seconds)
+   * @private
+   */
   private readonly ONLINE_UPDATE_INTERVAL = 5000; // 5 seconds
+  
+  /**
+   * Interval for sending updates to clients when driver is offline (1 minute)
+   * @private
+   */
   private readonly OFFLINE_UPDATE_INTERVAL = 60000; // 1 minute
 
+  /**
+   * Constructor for the client gateway
+   * @param realtimeService Service for managing real-time subscriptions and updates
+   * @param driverService Service for retrieving driver information
+   */
   constructor(
     @Inject('IRealtimeService') private readonly realtimeService: IRealtimeService,
     @Inject('IDriverService') private readonly driverService: IDriverService,
   ) {}
 
+  /**
+   * Handles new client connections to the WebSocket gateway
+   * Implements OnGatewayConnection interface
+   * @param client Socket.IO client socket instance
+   */
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
   }
 
+  /**
+   * Handles client disconnections from the WebSocket gateway
+   * Cleans up resources by clearing update intervals
+   * Implements OnGatewayDisconnect interface
+   * @param client Socket.IO client socket instance
+   */
   async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
     
@@ -52,6 +93,10 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Handles client subscription to driver updates
+   * Sets up the subscription in the realtime service and configures periodic updates
+   * @param client Socket.IO client socket instance
+   * @param driverId Unique identifier of the driver to subscribe to
+   * @returns Object indicating success or failure of the subscription
    */
   @SubscribeMessage('subscribe-driver')
   async handleSubscription(
@@ -90,8 +135,11 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Sends driver location and profile update to the client
+   * Adjusts update frequency based on driver's online status
+   * Emits different events based on driver availability and status
    * @param clientId The ID of the client socket
    * @param driverId The ID of the driver to track
+   * @private Internal helper method
    */
   private async sendDriverUpdate(clientId: string, driverId: string) {
     try {
