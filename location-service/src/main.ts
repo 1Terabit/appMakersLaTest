@@ -26,7 +26,7 @@ async function bootstrap() {
   );
   
   await app.listen(3000);
-  console.log(`Location service is running on port 3000`);
+  console.log(`Location service is running on port 3002`);
 }
 
 bootstrap();
