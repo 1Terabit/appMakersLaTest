@@ -4,11 +4,30 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto } from '../dto/login.dto';
 
+/**
+ * Service that proxies authentication requests to the auth-service microservice
+ * Handles driver authentication, token validation, and profile retrieval
+ */
 @Injectable()
 export class AuthService {
+  /**
+   * Logger instance for this service
+   * @private
+   */
   private readonly logger = new Logger(AuthService.name);
+  
+  /**
+   * Base URL for the authentication service API
+   * @private
+   */
   private readonly authServiceUrl: string;
 
+  /**
+   * Creates an instance of AuthService
+   * Configures the auth service URL from environment variables
+   * @param httpService NestJS HTTP service for making requests to the auth microservice
+   * @param configService NestJS config service for retrieving configuration
+   */
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -17,9 +36,11 @@ export class AuthService {
   }
 
   /**
-   * Login de un conductor
-   * @param loginDto Datos de login
-   * @returns Token de acceso e información del conductor
+   * Authenticates a driver with email and password
+   * Forwards the login request to the auth-service
+   * @param loginDto Login credentials (email and password)
+   * @returns Object containing access token and driver information
+   * @throws UnauthorizedException if credentials are invalid
    */
   async login(loginDto: LoginDto) {
     try {
@@ -30,14 +51,16 @@ export class AuthService {
       return response.data;
     } catch (error) {
       this.logger.error(`Login error: ${error.message}`, error.stack);
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
   }
 
   /**
-   * Valida un token de acceso
-   * @param token Token a validar
-   * @returns Resultado de la validación
+   * Validates a driver's access token
+   * Forwards the token validation request to the auth-service
+   * @param token JWT token to validate
+   * @returns Object containing validation result (isValid flag and driverId if valid)
+   * @throws UnauthorizedException if token is invalid or expired
    */
   async validateToken(token: string) {
     try {
@@ -48,14 +71,16 @@ export class AuthService {
       return response.data;
     } catch (error) {
       this.logger.error(`Token validation error: ${error.message}`, error.stack);
-      throw new UnauthorizedException('Token inválido o expirado');
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 
   /**
-   * Obtiene el perfil de un conductor
-   * @param driverId ID del conductor
-   * @returns Perfil del conductor
+   * Retrieves a driver's profile information
+   * Forwards the profile request to the auth-service
+   * @param driverId ID of the driver to get profile for
+   * @returns Driver profile object with personal information
+   * @throws UnauthorizedException if profile cannot be retrieved
    */
   async getDriverProfile(driverId: string) {
     try {
@@ -66,7 +91,7 @@ export class AuthService {
       return response.data;
     } catch (error) {
       this.logger.error(`Get profile error: ${error.message}`, error.stack);
-      throw new UnauthorizedException('Error al obtener el perfil del conductor');
+      throw new UnauthorizedException('Error retrieving driver profile');
     }
   }
 }
