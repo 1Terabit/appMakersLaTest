@@ -6,12 +6,37 @@ import { DriverLocation } from '../../domain/driver-location.entity';
 import { DriverProfile } from '../../domain/driver-profile.entity';
 import { IDriverService } from '../../ports/out/driver-service.port';
 
+/**
+ * HTTP implementation of the IDriverService port
+ * Provides communication with auth-service and location-service
+ * to retrieve driver profiles, locations, and validate tokens
+ */
 @Injectable()
 export class HttpDriverService implements IDriverService {
+  /**
+   * Logger instance for this service
+   * @private
+   */
   private readonly logger = new Logger(HttpDriverService.name);
+  
+  /**
+   * Base URL for the authentication service API
+   * @private
+   */
   private readonly authServiceUrl: string;
+  
+  /**
+   * Base URL for the location service API
+   * @private
+   */
   private readonly locationServiceUrl: string;
 
+  /**
+   * Creates an instance of HttpDriverService
+   * Configures the service URLs from environment variables
+   * @param httpService NestJS HTTP service for making external API calls
+   * @param configService NestJS config service for retrieving configuration
+   */
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -20,6 +45,12 @@ export class HttpDriverService implements IDriverService {
     this.locationServiceUrl = this.configService.get<string>('LOCATION_SERVICE_URL') || 'http://localhost:3002';
   }
 
+  /**
+   * Retrieves a driver's profile information from the auth service
+   * @param driverId The ID of the driver to get the profile for
+   * @returns Promise resolving to the driver profile or null if not found/error occurs
+   * @implements IDriverService.getDriverProfile
+   */
   async getDriverProfile(driverId: string): Promise<DriverProfile | null> {
     try {
       const response = await firstValueFrom(
@@ -37,6 +68,12 @@ export class HttpDriverService implements IDriverService {
     }
   }
 
+  /**
+   * Retrieves a driver's last known location from the location service
+   * @param driverId The ID of the driver to get the location for
+   * @returns Promise resolving to the driver location or null if not found/error occurs
+   * @implements IDriverService.getLastKnownLocation
+   */
   async getLastKnownLocation(driverId: string): Promise<DriverLocation | null> {
     try {
       const response = await firstValueFrom(
@@ -55,6 +92,12 @@ export class HttpDriverService implements IDriverService {
     }
   }
 
+  /**
+   * Validates a driver's authentication token with the auth service
+   * @param token The JWT token to validate
+   * @returns Promise resolving to an object containing validation result and driver ID if valid
+   * @implements IDriverService.validateDriverToken
+   */
   async validateDriverToken(token: string): Promise<{ isValid: boolean; driverId?: string }> {
     try {
       const response = await firstValueFrom(
