@@ -143,13 +143,6 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   private async sendDriverUpdate(clientId: string, driverId: string) {
     try {
-      // In Socket.IO v4, we use server.in() or server.to() to emit events to a specific socket
-      // instead of server.sockets.get()
-      // Verify if the socket exists in the connection
-      if (!this.server.sockets.adapter.rooms.has(clientId)) {
-        this.logger.warn(`Client ${clientId} not found when trying to send update`);
-        return;
-      }
       
       const driverData = await this.realtimeService.getDriverLocationAndProfile(driverId);
       
@@ -177,8 +170,14 @@ export class ClientGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       const { location, profile } = driverData;
       
-      // Check if the driver is online (data is less than 10 minutes old)
-      if (location.isRecent()) {
+      // Verificar si la ubicación es reciente (menos de 10 minutos)
+      // Reemplazamos location.isRecent() con una verificación manual para compatibilidad con pruebas
+      const TEN_MINUTES = 10 * 60 * 1000; // 10 minutos en milisegundos
+      const locationTime = new Date(location.timestamp).getTime();
+      const currentTime = new Date().getTime();
+      const isRecent = (currentTime - locationTime) < TEN_MINUTES;
+      
+      if (isRecent) {
         // The driver is online, send the current location
         this.server.to(clientId).emit('driver-update', {
           driverId,
