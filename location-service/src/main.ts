@@ -25,8 +25,10 @@ async function bootstrap() {
     }),
   );
   
-  await app.listen(3000);
-  console.log(`Location service is running on port 3002`);
+  await app.listen(3002);
+  const serverUrl = await app.getUrl();
+  console.log(`Location service is running on: ${serverUrl}`);
+  console.log(`Swagger documentation available at: ${serverUrl}/api/docs`);
 }
 
 bootstrap();

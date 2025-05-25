@@ -16,31 +16,25 @@ RUN npm install -g @nestjs/cli
 COPY src/ ./src/
 COPY nest-cli.json ./
 
-# Debug: List files to verify all necessary files are present
-RUN ls -la
-
-# Attempt build with verbose logging
+# Build the application
 RUN pnpm build
 
-# Debug: Verify build output
-RUN ls -la dist/ || echo "dist directory not created or empty"
+# Create a clean production node_modules
+RUN pnpm install --prod
 
+# Create the final image
 FROM node:18-alpine
 WORKDIR /app
 
-# Install PNPM
-RUN corepack enable && corepack prepare pnpm@8.6.0 --activate
-
-# Copy built files and package.json
+# Copy built files, package.json, and node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
 
-# Debug: Verify files were copied correctly
+# Verify files were copied correctly
 RUN ls -la
-RUN ls -la dist/ || echo "dist directory not copied or empty"
-
-# Install production dependencies
-RUN pnpm install --prod
+RUN ls -la dist/
+RUN ls -la node_modules/
 
 EXPOSE 3002
 

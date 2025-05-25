@@ -159,21 +159,21 @@ This is the recommended approach as it provides a consistent environment and han
    docker-compose up -d
    
    # Using Podman
-   podman-compose up -d
+   podman compose up --build
    ```
 
 3. View logs for all services
    ```bash
    docker-compose logs -f
    # or with Podman
-   podman-compose logs -f
+   podman compose logs -f
    ```
 
 4. Stop all services
    ```bash
    docker-compose down
    # or with Podman
-   podman-compose down
+   podman compose down
    ```
 
 ### Option 2: Running Locally
