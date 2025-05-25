@@ -1,15 +1,24 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 /**
- * DTO para la solicitud de login
+ * Data Transfer Object for login requests
+ * Contains the fields needed to authenticate a driver
  */
 export class LoginDto {
-  @IsEmail({}, { message: 'El correo electrónico no es válido' })
-  @IsNotEmpty({ message: 'El correo electrónico es requerido' })
+  /**
+   * Driver's email address for authentication
+   * Must be a valid email format
+   */
+  @IsEmail({}, { message: 'Email is not valid' })
+  @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
-  @IsString({ message: 'La contraseña debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'La contraseña es requerida' })
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+  /**
+   * Driver's password for authentication
+   * Must be at least 6 characters long
+   */
+  @IsString({ message: 'Password must be a string' })
+  @IsNotEmpty({ message: 'Password is required' })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   password: string;
 }
