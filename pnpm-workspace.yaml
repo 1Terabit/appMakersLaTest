@@ -1,0 +1,5 @@
+packages:
+  - "auth-service"
+  - "location-service"
+  - "realtime-service"
+  - "gateway-service"

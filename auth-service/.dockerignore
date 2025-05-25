@@ -1,0 +1,44 @@
+# Archivos de sistema
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# Dependencias
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Archivos de build
+dist
+build
+coverage
+.nyc_output
+
+# Archivos de entorno y secretos
+.env
+.env.*
+*.pem
+*.key
+
+# Archivos de Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Archivos de prueba
+**/*.test.ts
+**/*.spec.ts
+test
+tests
+__tests__
+__mocks__
+
+# Otros
+.npmrc
+.pnpmrc
+README.md
+CHANGELOG.md

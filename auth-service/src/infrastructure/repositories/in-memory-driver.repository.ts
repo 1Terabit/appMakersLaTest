@@ -1,0 +1,78 @@
+import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { Driver } from '../../domain/driver.entity';
+import { IDriverRepository } from '../../ports/out/driver-repository.port';
+
+/**
+ * Implementación en memoria del repositorio de conductores
+ * En un entorno real, esto se conectaría a una base de datos
+ */
+@Injectable()
+export class InMemoryDriverRepository implements IDriverRepository {
+  // Simulamos una base de datos en memoria con conductores codificados
+  private drivers: Driver[] = [];
+
+  constructor() {
+    // Inicializamos con algunos conductores de prueba
+    this.initializeDrivers();
+  }
+
+  async findByCredentials(email: string, password: string): Promise<Driver | null> {
+    const driver = await this.findByEmail(email);
+    
+    if (!driver) {
+      return null;
+    }
+    
+    const isPasswordValid = await bcrypt.compare(password, driver.password);
+    
+    return isPasswordValid ? driver : null;
+  }
+
+  async findById(id: string): Promise<Driver | null> {
+    return this.drivers.find(driver => driver.id === id) || null;
+  }
+
+  async findByEmail(email: string): Promise<Driver | null> {
+    return this.drivers.find(driver => driver.email === email) || null;
+  }
+
+  /**
+   * Inicializa la "base de datos" con conductores de prueba
+   * En un entorno real, esta función no existiría
+   */
+  private async initializeDrivers() {
+    // Creamos 3 conductores de prueba con contraseñas hasheadas
+    const salt = await bcrypt.genSalt();
+    
+    this.drivers = [
+      {
+        id: '1',
+        name: 'Juan Pérez',
+        email: 'juan@example.com',
+        password: await bcrypt.hash('password1', salt),
+        profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: '2',
+        name: 'María López',
+        email: 'maria@example.com',
+        password: await bcrypt.hash('password2', salt),
+        profileImage: 'https://randomuser.me/api/portraits/women/2.jpg',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: '3',
+        name: 'Carlos Rodríguez',
+        email: 'carlos@example.com',
+        password: await bcrypt.hash('password3', salt),
+        profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+  }
+}
