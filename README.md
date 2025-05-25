@@ -8,6 +8,8 @@ This project implements a real-time driver location system where clients can sub
 
 ## Architecture
 
+The system follows a microservices architecture with four specialized services, implementing the hexagonal architecture pattern (Ports & Adapters).
+
 ### Microservices Architecture
 The system is composed of four microservices that communicate with each other:
 
@@ -16,18 +18,12 @@ The system is composed of four microservices that communicate with each other:
 3. **Location Service** - Driver location updates and storage
 4. **Realtime Service** - WebSocket communication for real-time updates
 
-### Hexagonal Architecture (Ports & Adapters)
-Each microservice follows the hexagonal architecture pattern:
-
-- **Domain Layer**: Core business entities and logic
-- **Application Layer**: Use cases and business rules
-- **Ports Layer**: Interface definitions (input and output ports)
-- **Adapters Layer**: Concrete implementations of interfaces
-
 ### Communication Patterns
 - **HTTP/REST**: Between gateway and other services
 - **WebSockets**: For real-time client updates
 - **Redis Pub/Sub**: For inter-service messaging and scaling
+
+**For detailed architecture diagrams and documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
 
 ## Technologies
 

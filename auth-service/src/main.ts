@@ -38,8 +38,8 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
   
   await app.listen(3000);
-  console.log(`Auth service is running on port 3000`);
-  console.log(`Swagger documentation available at http://localhost:3000/docs`);
+  console.log(`Auth service is running on port 3001`);
+  console.log(`Swagger documentation available at http://localhost:3001/docs`);
 }
 
 bootstrap();
