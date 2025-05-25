@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Headers, UnauthorizedException, Logger } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Inject, Param, Post, Headers, UnauthorizedException, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +11,7 @@ export class LocationController {
   private readonly authServiceUrl: string;
 
   constructor(
-    private readonly locationService: ILocationService,
+    @Inject('ILocationService') private readonly locationService: ILocationService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
