@@ -8,7 +8,14 @@ This project implements a real-time driver location system where clients can sub
 
 ## Architecture
 
-The system follows a microservices architecture with four specialized services, implementing the hexagonal architecture pattern (Ports & Adapters).
+The system follows a microservices architecture with four specialized services, implementing the hexagonal architecture pattern (Ports & Adapters) and SOLID principles:
+
+- **Domain**: Core business entities and rules
+- **Ports**: Interfaces defining inputs/outputs
+- **Application**: Use cases and business logic
+- **Infrastructure**: External adapters and implementations
+
+Multiple instances can communicate through Redis Pub/Sub, making the system horizontally scalable.
 
 ### Microservices Architecture
 The system is composed of four microservices that communicate with each other:
@@ -119,7 +126,7 @@ The project implements a comprehensive testing approach with both unit tests and
 - Node.js (v16+)
 - Redis server (for messaging between services)
 - PNPM package manager (recommended)
-- Docker or Podman
+- Podman or Docker
 
 ## Getting Started
 
@@ -299,17 +306,6 @@ Each microservice follows a similar structure based on hexagonal architecture wi
 - **Docker Compose**: Service orchestration
 - **PNPM**: Package management
 - **Swagger**: API documentation
-
-## Architecture
-
-The system uses a Hexagonal Architecture (Ports & Adapters) pattern:
-
-- **Domain**: Core business entities and rules
-- **Ports**: Interfaces defining inputs/outputs
-- **Application**: Use cases and business logic
-- **Infrastructure**: External adapters and implementations
-
-Multiple instances can communicate through Redis Pub/Sub, making the system horizontally scalable.
 
 ## API Documentation
 
