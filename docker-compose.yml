@@ -11,9 +11,6 @@ services:
       - REDIS_PORT=6379
       - JWT_SECRET=auth_service_secret_key
       - JWT_EXPIRATION=300
-    volumes:
-      - ./auth-service:/app
-      - /app/node_modules
     depends_on:
       - redis
 
@@ -25,9 +22,6 @@ services:
       - NODE_ENV=development
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    volumes:
-      - ./location-service:/app
-      - /app/node_modules
     depends_on:
       - redis
 
@@ -41,9 +35,6 @@ services:
       - REDIS_PORT=6379
       - LOCATION_SERVICE_URL=http://location-service:3000
       - AUTH_SERVICE_URL=http://auth-service:3000
-    volumes:
-      - ./realtime-service:/app
-      - /app/node_modules
     depends_on:
       - redis
       - auth-service
@@ -58,9 +49,6 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:3000
       - LOCATION_SERVICE_URL=http://location-service:3000
       - REALTIME_SERVICE_URL=http://realtime-service:3000
-    volumes:
-      - ./gateway-service-bff:/app
-      - /app/node_modules
     depends_on:
       - auth-service
       - location-service

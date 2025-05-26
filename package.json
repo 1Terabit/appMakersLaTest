@@ -1,0 +1,33 @@
+{
+  "name": "driver-location-system",
+  "version": "1.0.0",
+  "description": "Real-time transport system with microservices architecture for tracking driver locations",
+  "private": true,
+  "engines": {
+    "node": ">=16",
+    "pnpm": ">=8"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm -r test:e2e",
+    "start": "pnpm -r start:dev",
+    "clean": "pnpm -r exec -- rm -rf dist node_modules",
+    "lint": "pnpm -r lint"
+  },
+  "workspaces": [
+    "auth-service",
+    "location-service",
+    "realtime-service",
+    "gateway-service-bff"
+  ],
+  "keywords": [
+    "microservices",
+    "nestjs",
+    "websockets",
+    "realtime",
+    "location-tracking"
+  ],
+  "author": "",
+  "license": "UNLICENSED"
+}
